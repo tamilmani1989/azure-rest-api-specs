@@ -135,7 +135,16 @@ We request OpenAPI(Swagger) spec authoring be assigned to engineers who have an
 | [R2007](#r2007) | [LongRunningOperationsWithLongRunningExtension](#r2007) | ARM OpenAPI(swagger) specs |
 | [R2029](#r2029) | [PageableOperation](#r2029) | ARM and Data plane OpenAPI(swagger) specs |
 | [R4006](#r4006) | [DeprecatedXmsCodeGenerationSetting](#r4006) | ARM and Data plane OpenAPI(swagger) specs |
-  
+
+
+### RPaaS Violations
+
+#### RPaaS Errors
+
+| Id | Rule Name | Applies to |
+| --- | --- | --- |
+| [R4014](#r4014) | [LongRunningOperationMustSupport201](#r4014) | ARM OpenAPI(swagger) specs |
+
 ### Documentation
 
 #### Documentation Errors
@@ -2578,6 +2587,56 @@ The following would be valid:
           "type": "integer",
           "format": "int64",
       ....
+  }
+...
+```
+Links: [Index](#index) | [Error vs. Warning](#error-vs-warning) | [Automated Rules](#automated-rules) | [ARM](#arm-violations): [Errors](#arm-errors) or [Warnings](#arm-warnings) | [SDK](#sdk-violations): [Errors](#sdk-errors) or [Warnings](#sdk-warnings)
+
+### <a name="r4014" ></a>R4014 LongRunningOperationMustSupport201
+
+**Category** : RPaaS Error
+
+**Applies to** : ARM OpenAPI(swagger) specs
+
+**Output Message** : An async PUT operation response include status code 201 and 200
+
+**Description** : An async PUT operation response include status code 201 with Azure-async-operation header. Must also support status code 200, for simple updates that can be completed synchronously (ex: tags). Operation must also add "x-ms-long-running-operation and x-ms-long-running-operation-options" to describe how the long running operation is tracked.
+
+**CreatedAt**: August 10, 2020
+
+**LastModifiedAt**: August 10, 2020
+
+**Why this rule is important**: RPaaS only supports 201 for async operations. This is enforced at runtime via swagger validation.
+
+**How to fix the violation**: Add the following for async PUT operations.
+
+The following would be valid:
+
+```json
+...
+  "responses": {
+      "201": {
+        "description": "Created",
+        "schema": {
+          "$ref": "#/definitions/MySimpleObject"
+        }
+      },
+      "200": {
+        "description": "Succeeded",
+        "schema": {
+          "$ref": "#/definitions/MySimpleObject"
+        }
+      },
+      "default": {
+        "description": "Error response describing why the operation failed.",
+        "schema": {
+          "$ref": "#/definitions/ErrorResponse"
+        }
+      }
+    },
+    "x-ms-long-running-operation": true,
+    "x-ms-long-running-operation-options": {
+      "final-state-via": "azure-async-operation"
   }
 ...
 ```
